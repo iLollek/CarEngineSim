@@ -1,10 +1,12 @@
+import datetime
+
 class Engine:
     def __init__(self, name: str, manufacturer: str, description: str, 
                  cylinders: int, displacement: int, cylinder_bore: float, 
                  piston_stroke: float, compression_ratio: float, 
                  max_rpm: int, max_horsepower: int, max_kw: int, 
                  max_torque_nm: int, ron: int, ecs: str, 
-                 peak_torque_rpm: int, peak_hp_rpm: int):
+                 peak_torque_rpm: int, peak_hp_rpm: int, clutch_response_time):
         # Visual Info & Trivia
         self.name: str = name
         self.manufacturer: str = manufacturer
@@ -24,6 +26,7 @@ class Engine:
         self.ECS: str = ecs
         self.peak_torque_rpm: int = peak_torque_rpm  # RPM where peak torque occurs
         self.peak_hp_rpm: int = peak_hp_rpm  # RPM where peak horsepower occurs
+        self.clutch_response_time: int = clutch_response_time # Clutch response time in ms
 
         # Simulation Data
         self.current_hp: float = 0.0
@@ -33,6 +36,9 @@ class Engine:
         self.throttle_decay_rate: float = 0.02  # Throttle decay rate when not accelerating
         self.increase_rate: float = 0  # Rate of RPM increase based on throttle position
         self.base_increase_rate: float = 0.03
+        self.current_gear_ratio: float = None
+        self.clutched: bool = False # Engine can only generate power to the gearbox if clutch is False
+        self.clutched_timestamp: datetime = None
 
     def calculate_increase_rate(self, gear_ratio: float):
         """
@@ -46,26 +52,52 @@ class Engine:
                                 increase rate and a smaller number corresponds to a lower
                                 increase rate.
         """
-        self.increase_rate = self.base_increase_rate * gear_ratio
+        self.current_gear_ratio = gear_ratio
+        self.increase_rate = self.base_increase_rate * gear_ratio / 2
 
     def update_rpm(self):
         """
         Updates the current RPM based on the throttle input.
-        Simulates a more realistic non-linear increase and decrease in RPM.
+        Simulates a more realistic non-linear increase and decrease in RPM,
+        including slower increases near maximum RPM, and considering gear ratios.
+        
+        Args:
+            gear_ratio (float): The current gear ratio which affects RPM increase. Higher gear ratios
+                                (lower gears) allow faster RPM increases, while lower gear ratios 
+                                (higher gears) make it harder to reach max RPM.
         """
-        target_rpm = int(self.max_rpm * self.throttle)
+        if self.clutched is True:
+            self.throttle = 0.0
+            if self.clutched_timestamp is None:
+                self.clutched_timestamp = datetime.datetime.now()
+            else:
+                # Check if the difference between now and clutched_timestamp is greater than 1 second
+                if datetime.datetime.now() - self.clutched_timestamp > datetime.timedelta(milliseconds=self.clutch_response_time):
+                    self.clutched = False
+                    self.clutched_timestamp = None
+        
+        # Calculate the target RPM based on throttle and gear ratio
+        target_rpm = int(self.max_rpm * self.throttle * self.current_gear_ratio)
+        
         if target_rpm > self.current_rpm:
             # Simulate RPM increase with a non-linear approach
             if self.current_rpm < target_rpm:
                 # Gradual increase to target RPM
                 increase_rate = (target_rpm - self.current_rpm) * self.increase_rate
-                self.current_rpm += increase_rate
+                
+                # Slow down RPM increase as it approaches the max RPM using a decay factor
+                decay_factor = 1 - ((self.current_rpm / self.max_rpm) ** 2)
+                self.current_rpm += increase_rate * decay_factor
+                
                 if self.current_rpm > target_rpm:
                     self.current_rpm = target_rpm
         else:
             # Simulate RPM decay when throttle is released
             if self.current_rpm > 700:
-                decay_rate = float(self.current_rpm - target_rpm) * self.increase_rate  # Fixed rate for RPM decay
+                if self.clutched == False:
+                    decay_rate = float(self.current_rpm - target_rpm) * self.increase_rate / 10 # Fixed rate for RPM decay
+                elif self.clutched == True:
+                    decay_rate = float(self.current_rpm - target_rpm) * self.increase_rate # Fixed rate for RPM decay
                 self.current_rpm -= decay_rate
                 if self.current_rpm < 700:
                     self.current_rpm = 700

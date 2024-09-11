@@ -26,7 +26,7 @@ def draw_slider(screen, x, y, width, height, value):
     pygame.draw.circle(screen, (0, 100, 0), (slider_pos, y + height // 2), height // 2)
 
 def draw_rpm_gauge(screen, center_x, center_y, radius, rpm, max_rpm):
-    """
+    """ 
     Draws a sleek, modern circular RPM gauge with a needle and redline.
 
     :param screen: The Pygame screen to draw on.
@@ -98,9 +98,12 @@ def main():
 
     # Create engine and gearbox instances
     # engine = Engine("2.0L SkyActiv-G", "Mazda", None, 4, 1998, 83.5, 91.2, 13.0, 6000, 155, 114, 200, 85, "Direct", 4000, 6000)
-    engine = Engine("M15A-FXE", "Toyota", "3 Cylinder Engine", 3, 1490, 80.5, 97.6, 14.0, 5500, 91, 67, 120, 91, "EFI", 4800, 5500) # Toyota Yaris
+    engine = Engine("M15A-FXE", "Toyota", "3 Cylinder Engine", 3, 1490, 80.5, 97.6, 14.0, 5500, 91, 67, 120, 91, "EFI", 4800, 5500, 650) # Toyota Yaris
     # gearbox = Gearbox(gear_ratios=[3.454, 2.043, 1.308, 1, 0.759, 0.634], tire_size="195/50R16", final_drive_ratio=3.636)  # Example ratios and tire circumference
-    gearbox = Gearbox(gear_ratios=[3.545, 1.913, 1.310, 1.027, 0.850], final_drive_ratio=4.294, tire_size="195/55R16")
+    # gearbox = Gearbox(gear_ratios=[3.545, 1.913, 1.310, 1.027, 0.850], final_drive_ratio=4.294, tire_size="185/65R15")
+
+    # engine = Engine("EJ257 (STI)", "Subaru", "Boxer", 4, 2457, 99.5, 79, 8.2, 8000, 300, 223, 393, None, "DOHC", 4000, 6000, 250)
+    gearbox = Gearbox([3.454, 1.947, 1.296, 0.972, 0.78, 0.666], "245/35R19", 4.111)
     
     clock = pygame.time.Clock()
     
@@ -132,11 +135,16 @@ def main():
                     engine.throttle = slider_value
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
+                    engine.clutched = True
                     gearbox.shift_up()
                     engine.calculate_increase_rate(gearbox.get_current_ratio())
                 elif event.key == pygame.K_DOWN:
+                    engine.clutched = True
                     gearbox.shift_down()
                     engine.calculate_increase_rate(gearbox.get_current_ratio())
+
+        if engine.clutched == False and engine.throttle != slider_value:
+            engine.throttle = slider_value
 
         engine.update_rpm()
 
@@ -158,13 +166,18 @@ def main():
         torque_text, _ = font.render(f"Torque: {engine.current_torque_nm:.2f} Nm", BLACK)
         speed_text, _ = font.render(f"Speed: {speed_kph:.2f} km/h", BLACK)
         gear_text, _ = font.render(f"Gear: {gearbox.current_gear}", BLACK)
-        throttle_text, _ = font.render(f"Throttle: {engine.throttle}", BLACK)
+        pedalpos_text, _ = font.render(f"Pedal Pos: {slider_value:.2f}", BLACK)
+        throttle_text, _ = font.render(f"Engine Throttle: {engine.throttle:.2f}", BLACK)
+        clutched_text, _ = font.render(f"Clutched: {engine.clutched}", BLACK)
+
         
         screen.blit(hp_text, (50, 100))
         screen.blit(torque_text, (50, 150))
         screen.blit(speed_text, (50, 200))
         screen.blit(gear_text, (50, 250))
-        screen.blit(throttle_text, (50, 300))
+        screen.blit(pedalpos_text, (50, 300))
+        screen.blit(throttle_text, (50, 350))
+        screen.blit(clutched_text, (50, 400))
 
         pygame.display.flip()
         clock.tick(60)

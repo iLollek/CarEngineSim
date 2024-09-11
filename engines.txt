@@ -1,2 +1,6 @@
-engine = Engine("M15A-FXE", "Toyota", "3 Cylinder Engine", 3, 1490, 80.5, 97.6, 14.0, 5500, 91, 67, 120, 91, "EFI") # Toyota Yaris
-engine = Engine("2.0L SkyActiv-G", "Mazda", None, 4, 1998, 83.5, 91.2, 13.0, 6000, 155, 114, 200, 85, "Direct", 4000, 6000) # Mazda MX-5
+# engine = Engine("2.0L SkyActiv-G", "Mazda", None, 4, 1998, 83.5, 91.2, 13.0, 6000, 155, 114, 200, 85, "Direct", 4000, 6000, 500) # Mazda MX-5
+
+# engine = Engine("M15A-FXE", "Toyota", "3 Cylinder Engine", 3, 1490, 80.5, 97.6, 14.0, 5500, 91, 67, 120, 91, "EFI", 4800, 5500, 650) # Toyota Yaris
+
+# engine = Engine("EJ257 (STI)", "Subaru", "Boxer", 4, 2457, 99.5, 79, 8.2, 8000, 300, 223, 393, None, "DOHC", 4000, 6000, 250) # Subaru WRX STI
+
